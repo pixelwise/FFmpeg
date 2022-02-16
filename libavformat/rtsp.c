@@ -33,6 +33,8 @@
 #include "avformat.h"
 #include "avio_internal.h"
 
+#include <stdio.h>
+
 #if HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -1698,6 +1700,7 @@ int ff_rtsp_connect(AVFormatContext *s)
     if (s->max_delay < 0) /* Not set by the caller */
         s->max_delay = s->iformat ? DEFAULT_REORDERING_DELAY : 0;
 
+    fprintf(stderr, "FFMPEG_RTSP_DEBUG: lower transport mask in ff_rtsp_connect: %x\n", rt->lower_transport_mask);
     rt->control_transport = RTSP_MODE_PLAIN;
     if (rt->lower_transport_mask & ((1 << RTSP_LOWER_TRANSPORT_HTTP) |
                                     (1 << RTSP_LOWER_TRANSPORT_HTTPS))) {
@@ -1909,6 +1912,7 @@ redirect:
     if (err)
         goto fail;
 
+    fprintf(stderr, "FFMPEG_RTSP_DEBUG: lower transport mask in ff_rtsp_connect before setup: %x\n", lower_transport_mask);
     do {
         int lower_transport = ff_log2_tab[lower_transport_mask &
                                   ~(lower_transport_mask - 1)];
@@ -1917,6 +1921,7 @@ redirect:
                 && (rt->rtsp_flags & RTSP_FLAG_PREFER_TCP))
             lower_transport = RTSP_LOWER_TRANSPORT_TCP;
 
+        fprintf(stderr, "FFMPEG_RTSP_DEBUG: attemping setup for lower transport %x\n", lower_transport);
         err = ff_rtsp_make_setup_request(s, host, port, lower_transport,
                                  rt->server_type == RTSP_SERVER_REAL ?
                                      real_challenge : NULL);
@@ -1935,6 +1940,7 @@ redirect:
     rt->seek_timestamp = 0; /* default is to start stream at position zero */
     return 0;
  fail:
+    fprintf(stderr, "FFMPEG_RTSP_DEBUG: connect failed\n");
     ff_rtsp_close_streams(s);
     ff_rtsp_close_connections(s);
     if (reply->status_code >=300 && reply->status_code < 400 && s->iformat) {
